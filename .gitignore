@@ -18,3 +18,4 @@ group_vars/all/local.yml
 host_vars/local-*.yml
 
 # Do NOT gitignore vault.yml — it's encrypted and MUST be committed
+.DS_Store
