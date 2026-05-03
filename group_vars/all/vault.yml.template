@@ -1,0 +1,61 @@
+---
+# ============================================================
+# SECRETS — this file should be encrypted with ansible-vault.
+# Copy to vault.yml then run:
+#   ansible-vault encrypt group_vars/all/vault.yml
+# Edit later with:
+#   ansible-vault edit group_vars/all/vault.yml
+# ============================================================
+
+# --- ProtonVPN WireGuard ---
+# 1. Sign up for ProtonVPN Plus (monthly plan for trial, or 24-mo deal)
+# 2. https://account.protonvpn.com/downloads → WireGuard configuration
+# 3. Create config:
+#      - Platform: any (Linux/GNU/Linux is fine)
+#      - Features: **enable NAT-PMP (Port Forwarding)** and P2P
+#      - Server: pick a country with P2P support (NL, CH, etc.)
+# 4. Download the .conf file. Copy values:
+#      [Interface] PrivateKey  → vault_wireguard_private_key
+#      [Interface] Address     → vault_wireguard_addresses (e.g. 10.2.0.2/32)
+vault_wireguard_private_key: "REPLACE_ME"
+vault_wireguard_addresses: "10.2.0.2/32"
+
+# --- Gluetun control-server API key ---
+# Gluetun 3.40+ requires auth on its control server. The sync-port-mod uses this
+# key to fetch the current forwarded port. Generate a fresh key:
+#   docker run --rm qmcgaw/gluetun genkey
+# Copy the output below. It's just a long random base58 string.
+vault_gluetun_api_key: "REPLACE_ME_RUN_gluetun_genkey"
+
+# --- qBittorrent ---
+# The sync-port-mod needs to call qBit's WebAPI. Two options:
+#   (A) Enable "Bypass authentication for clients on localhost" in qBit
+#       Settings → Web UI → Authentication. Then GSP_QBT_USERNAME/PASSWORD
+#       can be empty (recommended — one-time click, nothing to rotate).
+#   (B) Leave auth on and set user/pass below.
+# On first boot, qBit prints a random temp password in the logs:
+#   docker logs qbittorrent 2>&1 | grep "temporary password"
+# Log in with that, change it in Settings → Web UI, then fill in here:
+vault_qbittorrent_username: "admin"
+vault_qbittorrent_password: "REPLACE_ME_AFTER_FIRST_LOGIN"
+
+# --- Plex ---
+# https://www.plex.tv/claim — valid 4 minutes, fetch right before deploying
+vault_plex_claim: "claim-XXXXXXXXXXXX"
+
+# --- Nextcloud ---
+vault_nextcloud_admin_password: "REPLACE_ME_STRONG_PASSWORD"
+vault_nextcloud_db_password: "REPLACE_ME_DB_PASSWORD"
+
+# --- Immich ---
+vault_immich_db_password: "REPLACE_ME_IMMICH_DB"
+
+# --- Cloudflare Tunnel ---
+# After `cloudflared tunnel login` and `cloudflared tunnel create homelab`
+# you'll get a tunnel token. Paste here:
+vault_cloudflare_tunnel_token: "REPLACE_ME_TUNNEL_TOKEN"
+
+# --- Restic backup encryption ---
+# A strong passphrase that encrypts your entire backup repository.
+# Loses this = loses backups permanently. Write it down somewhere SAFE.
+vault_restic_password: "REPLACE_ME_RESTIC_PASSPHRASE"

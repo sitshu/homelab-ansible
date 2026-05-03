@@ -1,0 +1,10 @@
+---
+- name: Deploy Cloudflare Tunnel (zero-port-forward public access)
+  community.docker.docker_container:
+    name: cloudflared
+    image: "cloudflare/cloudflared:{{ versions.cloudflared }}"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ docker_network }}"
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "{{ vault_cloudflare_tunnel_token }}"]

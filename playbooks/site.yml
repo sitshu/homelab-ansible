@@ -1,0 +1,31 @@
+---
+# Deploy the default stack. Remote public access (cloudflared) is NOT included
+# here — Tailscale + native mobile apps (Plex Relay, Nextcloud app, Immich app)
+# cover remote access for you and family. Add `playbooks/remote.yml` separately
+# if you ever need to share public URLs with non-Tailscale users.
+- name: Homelab — full stack (private, Tailscale-only)
+  hosts: homelab
+  gather_facts: true
+  roles:
+    - role: common                # shared: directories, docker network
+      tags: [common, always]
+    - role: gluetun               # VPN — qBittorrent + Prowlarr depend on this
+      tags: [gluetun, vpn, arr]
+    - role: qbittorrent
+      tags: [qbittorrent, arr]
+    - role: prowlarr
+      tags: [prowlarr, arr]
+    - role: sonarr
+      tags: [sonarr, arr]
+    - role: radarr
+      tags: [radarr, arr]
+    - role: bazarr
+      tags: [bazarr, arr]
+    - role: plex                  # uses Plex Relay for remote access (free)
+      tags: [plex, media]
+    - role: immich                # accessed via Immich mobile/desktop app + Tailscale
+      tags: [immich, media, photos]
+    - role: nextcloud             # accessed via Nextcloud app + Tailscale
+      tags: [nextcloud, files]
+    - role: backup                # restic nightly backups to E:\backups
+      tags: [backup]

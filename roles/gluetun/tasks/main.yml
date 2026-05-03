@@ -1,0 +1,56 @@
+---
+# Gluetun 3.40+ requires auth on its control server. We write a config.toml
+# granting the GSP sync-port mod read-only access to the portforward endpoint.
+- name: Render Gluetun control-server auth config
+  ansible.builtin.copy:
+    dest: "{{ paths.docker_data }}/gluetun/auth/config.toml"
+    mode: "0600"
+    content: |
+      # Grant the qBittorrent sync-port mod read access to the forwarded port.
+      # The mod authenticates using the X-API-Key header with vault_gluetun_api_key.
+      [[roles]]
+      name = "gsp-sync-port-mod"
+      routes = ["GET /v1/portforward"]
+      auth = "apikey"
+      apikey = "{{ vault_gluetun_api_key }}"
+
+- name: Deploy Gluetun (VPN container) — qBittorrent shares its network
+  community.docker.docker_container:
+    name: gluetun
+    image: "qmcgaw/gluetun:{{ versions.gluetun }}"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ docker_network }}"
+    capabilities:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    env:
+      VPN_SERVICE_PROVIDER: "{{ vpn.provider }}"   # "protonvpn"
+      VPN_TYPE: "{{ vpn.type }}"                   # "wireguard"
+      WIREGUARD_PRIVATE_KEY: "{{ vault_wireguard_private_key }}"
+      WIREGUARD_ADDRESSES: "{{ vault_wireguard_addresses }}"
+      SERVER_COUNTRIES: "{{ vpn.server_countries }}"
+      # ONLY connect to Proton servers that support port forwarding (P2P-flagged).
+      # Without this, Gluetun can land on a non-PF server and PF silently fails.
+      PORT_FORWARD_ONLY: "on"
+      TZ: "{{ timezone }}"
+      UPDATER_PERIOD: "24h"
+      # Enable NAT-PMP port forwarding request from Proton
+      VPN_PORT_FORWARDING: "on"
+      VPN_PORT_FORWARDING_PROVIDER: "protonvpn"
+    volumes:
+      # Control-server auth config (written above) → expected path
+      - "{{ paths.docker_data }}/gluetun/auth/config.toml:/gluetun/auth/config.toml:ro"
+      - "{{ paths.docker_data }}/gluetun:/gluetun"
+    ports:
+      # All services sharing Gluetun's netns must have their ports published HERE,
+      # not on their own container, because the containers share Gluetun's network.
+      - "{{ ports.qbittorrent }}:{{ ports.qbittorrent }}"      # qBittorrent WebUI
+      - "{{ ports.prowlarr }}:9696"                             # Prowlarr WebUI
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "https://www.google.com"]
+      interval: 30s
+      timeout: 10s
+      retries: 5

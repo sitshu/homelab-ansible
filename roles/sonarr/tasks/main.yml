@@ -1,0 +1,19 @@
+---
+- name: Deploy Sonarr (TV)
+  community.docker.docker_container:
+    name: sonarr
+    image: "lscr.io/linuxserver/sonarr:{{ versions.sonarr }}"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ docker_network }}"
+    env:
+      PUID: "{{ puid }}"
+      PGID: "{{ pgid }}"
+      TZ: "{{ timezone }}"
+    ports:
+      - "{{ ports.sonarr }}:8989"
+    volumes:
+      - "{{ paths.docker_data }}/sonarr:/config"
+      # Mount the SAME parent path that qBittorrent uses so hardlinks work
+      - "/mnt/d/data:/data"

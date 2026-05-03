@@ -1,0 +1,7 @@
+---
+- name: Homelab — files
+  hosts: homelab
+  gather_facts: true
+  roles:
+    - role: common
+    - role: nextcloud

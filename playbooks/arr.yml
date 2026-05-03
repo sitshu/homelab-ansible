@@ -1,0 +1,12 @@
+---
+- name: Homelab — arr
+  hosts: homelab
+  gather_facts: true
+  roles:
+    - role: common
+    - role: gluetun
+    - role: qbittorrent
+    - role: prowlarr
+    - role: sonarr
+    - role: radarr
+    - role: bazarr

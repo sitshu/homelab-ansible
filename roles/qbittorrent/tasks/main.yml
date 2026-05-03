@@ -1,0 +1,49 @@
+---
+- name: Ensure qBittorrent config directory exists
+  ansible.builtin.file:
+    path: "{{ paths.docker_data }}/qbittorrent"
+    state: directory
+    mode: "0755"
+
+- name: Deploy qBittorrent on Gluetun's network (with Proton sync-port mod)
+  community.docker.docker_container:
+    name: qbittorrent
+    image: "lscr.io/linuxserver/qbittorrent:{{ versions.qbittorrent }}"
+    state: started
+    restart_policy: unless-stopped
+    # Share Gluetun's network namespace — all qBit traffic goes through the VPN.
+    # CRITICAL: qBit must start AFTER Gluetun is healthy. Docker's `depends_on`
+    # with service_healthy works via docker-compose; in plain `docker run` we
+    # simulate it by deploying Gluetun first (role order in site.yml) and
+    # ensuring Gluetun has a healthcheck that's healthy before qBit starts.
+    network_mode: "container:gluetun"
+    env:
+      PUID: "{{ puid }}"
+      PGID: "{{ pgid }}"
+      TZ: "{{ timezone }}"
+      WEBUI_PORT: "{{ ports.qbittorrent }}"
+
+      # --- GSP (Gluetun sync port) mod ---
+      # DOCKER_MODS injects the sync script into the LSIO qBit image at boot.
+      # Source: github.com/t-anc/GSP-Qbittorent-Gluetun-sync-port-mod
+      DOCKER_MODS: "ghcr.io/t-anc/gsp-qbittorent-gluetun-sync-port-mod:main"
+      # REQUIRED: Gluetun's control server API key (same key we put in
+      # config.toml for Gluetun). The mod sends this in X-API-Key header.
+      GSP_GTN_API_KEY: "{{ vault_gluetun_api_key }}"
+      # Gluetun's control server — inside the shared netns, it's localhost
+      GSP_GTN_ADDR: "http://localhost:8000"
+      # qBit's own WebUI — also localhost since we share Gluetun's netns
+      GSP_QBT_ADDR: "http://localhost:{{ ports.qbittorrent }}"
+      # How often to check for port changes (Proton rotates on reconnect, ~daily)
+      GSP_SLEEP: "120"
+      GSP_MINIMAL_LOGS: "false"
+      # After first deploy, you enable "Bypass authentication for clients on
+      # localhost" in qBit's WebUI settings. Until then, the mod uses creds:
+      GSP_QBT_USERNAME: "{{ vault_qbittorrent_username | default('admin') }}"
+      GSP_QBT_PASSWORD: "{{ vault_qbittorrent_password | default('') }}"
+    volumes:
+      - "{{ paths.docker_data }}/qbittorrent:/config"
+      # Mount /mnt/d/data as /data so hardlinks work between downloads/ and
+      # media/ (Sonarr/Radarr import via hardlink keeps both paths on the
+      # same inode — no duplicate disk use, keeps seeding alive).
+      - "/mnt/d/data:/data"

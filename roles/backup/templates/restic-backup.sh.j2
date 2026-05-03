@@ -1,0 +1,30 @@
+#!/bin/bash
+set -euo pipefail
+
+export RESTIC_REPOSITORY="{{ paths.backup_root }}/restic-repo"
+export RESTIC_PASSWORD="{{ vault_restic_password }}"
+
+# Initialize repo on first run (idempotent)
+if ! restic snapshots > /dev/null 2>&1; then
+  restic init
+fi
+
+# Back up everything under sources
+restic backup \
+{% for src in backup.sources %}
+  "{{ src }}" \
+{% endfor %}
+  --tag daily \
+  --exclude-caches
+
+# Prune according to retention
+restic forget \
+  --keep-daily {{ backup.retention.daily }} \
+  --keep-weekly {{ backup.retention.weekly }} \
+  --keep-monthly {{ backup.retention.monthly }} \
+  --prune
+
+# Check repo integrity once a week (Sunday only)
+if [ "$(date +%u)" = "7" ]; then
+  restic check --read-data-subset=5%
+fi

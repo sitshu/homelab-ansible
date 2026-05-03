@@ -1,0 +1,13 @@
+---
+- name: Render Immich docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ paths.docker_data }}/immich/docker-compose.yml"
+    mode: "0640"
+  register: immich_compose
+
+- name: Deploy Immich stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ paths.docker_data }}/immich"
+    state: present
+    pull: policy

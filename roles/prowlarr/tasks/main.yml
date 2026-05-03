@@ -1,0 +1,22 @@
+---
+# Prowlarr routes indexer queries (torrent site API calls) through Gluetun so
+# your ISP doesn't see you hitting 1337x/rarbg/etc. all day. Note: this means
+# Prowlarr is reachable on HOST:{{ ports.prowlarr }} via Gluetun's published
+# port list — see roles/gluetun/tasks/main.yml.
+#
+# If you ever want Prowlarr on the clear net (e.g. an indexer rate-limits VPN
+# IPs), swap `network_mode: container:gluetun` for `networks: [homelab]` and
+# add a `ports:` stanza back.
+- name: Deploy Prowlarr (indexer manager) — also routed via Gluetun VPN
+  community.docker.docker_container:
+    name: prowlarr
+    image: "lscr.io/linuxserver/prowlarr:{{ versions.prowlarr }}"
+    state: started
+    restart_policy: unless-stopped
+    network_mode: "container:gluetun"
+    env:
+      PUID: "{{ puid }}"
+      PGID: "{{ pgid }}"
+      TZ: "{{ timezone }}"
+    volumes:
+      - "{{ paths.docker_data }}/prowlarr:/config"

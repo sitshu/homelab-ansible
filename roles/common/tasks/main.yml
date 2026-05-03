@@ -1,0 +1,51 @@
+---
+- name: Ensure base directories exist on host
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ paths.docker_data }}"
+    - "{{ paths.media_root }}"
+    - "{{ paths.media_root }}/movies"
+    - "{{ paths.media_root }}/tv"
+    - "{{ paths.media_root }}/music"
+    - "{{ paths.media_root }}/marathi"
+    - "{{ paths.media_root }}/audiobooks"
+    - "{{ paths.media_root }}/study"
+    - "{{ paths.media_root }}/photos"
+    - "{{ paths.downloads_root }}"
+    - "{{ paths.downloads_root }}/incomplete"
+    - "{{ paths.downloads_root }}/complete"
+    - "{{ paths.downloads_root }}/complete/movies"
+    - "{{ paths.downloads_root }}/complete/tv"
+    - "{{ paths.downloads_root }}/complete/music"
+    - "{{ paths.photos_root }}"
+    - "{{ paths.backup_root }}"
+
+- name: Ensure per-service config directories exist
+  ansible.builtin.file:
+    path: "{{ paths.docker_data }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - gluetun
+    - qbittorrent
+    - prowlarr
+    - sonarr
+    - radarr
+    - bazarr
+    - plex
+    - immich
+    - immich/db
+    - nextcloud
+    - nextcloud/db
+    - nextcloud/redis
+    - cloudflared
+    - restic
+
+- name: Create shared Docker network
+  community.docker.docker_network:
+    name: "{{ docker_network }}"
+    state: present
+    driver: bridge

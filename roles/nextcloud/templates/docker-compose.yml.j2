@@ -1,0 +1,46 @@
+---
+services:
+  nextcloud-db:
+    container_name: nextcloud-db
+    image: "postgres:{{ versions.postgres }}"
+    restart: unless-stopped
+    networks: [homelab]
+    environment:
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: "{{ vault_nextcloud_db_password }}"
+    volumes:
+      - "{{ paths.docker_data }}/nextcloud/db:/var/lib/postgresql/data"
+
+  nextcloud-redis:
+    container_name: nextcloud-redis
+    image: "redis:{{ versions.redis }}"
+    restart: unless-stopped
+    networks: [homelab]
+
+  nextcloud:
+    container_name: nextcloud
+    image: "nextcloud:{{ versions.nextcloud }}"
+    restart: unless-stopped
+    networks: [homelab]
+    ports:
+      - "{{ ports.nextcloud }}:80"
+    depends_on: [nextcloud-db, nextcloud-redis]
+    environment:
+      POSTGRES_HOST: nextcloud-db
+      POSTGRES_DB: nextcloud
+      POSTGRES_USER: nextcloud
+      POSTGRES_PASSWORD: "{{ vault_nextcloud_db_password }}"
+      REDIS_HOST: nextcloud-redis
+      NEXTCLOUD_ADMIN_USER: "{{ nextcloud.admin_user }}"
+      NEXTCLOUD_ADMIN_PASSWORD: "{{ vault_nextcloud_admin_password }}"
+      NEXTCLOUD_TRUSTED_DOMAINS: "{{ nextcloud.trusted_domains | join(' ') }}"
+      OVERWRITEPROTOCOL: https
+      TZ: "{{ timezone }}"
+    volumes:
+      - "{{ paths.docker_data }}/nextcloud/html:/var/www/html"
+      - "{{ paths.docker_data }}/nextcloud/data:/var/www/html/data"
+
+networks:
+  homelab:
+    external: true

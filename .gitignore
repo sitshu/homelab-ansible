@@ -1,0 +1,20 @@
+# Vault password file MUST never be committed
+.vault_pass
+*.vault_pass
+
+# Ansible ephemeral
+*.retry
+.ansible/
+__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Local overrides
+group_vars/all/local.yml
+host_vars/local-*.yml
+
+# Do NOT gitignore vault.yml — it's encrypted and MUST be committed

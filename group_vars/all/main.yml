@@ -1,0 +1,122 @@
+---
+# ============================================================
+# homelab-ansible — non-secret configuration
+# ============================================================
+# Secrets (API tokens, VPN keys, passwords) live in vault.yml
+# (encrypted with ansible-vault)
+# ============================================================
+
+# --- Identity / timezone ---
+puid: 1000
+pgid: 1000
+timezone: "America/Los_Angeles"      # TODO: set your timezone
+
+# --- Storage (WSL2 paths; host sees D:\data, WSL sees /mnt/d/data) ---
+paths:
+  # Configs, databases (on fast NVMe C:)
+  docker_data: "/mnt/c/docker-data"
+  # Media library (on 16TB D:)
+  media_root: "/mnt/d/data/media"
+  downloads_root: "/mnt/d/data/downloads"
+  # Photos (on fast NVMe C: for Immich performance)
+  photos_root: "/mnt/c/immich-library"
+  # Backup target (on 5TB E:)
+  backup_root: "/mnt/e/backups"
+
+# --- Docker network (all containers share this) ---
+docker_network: homelab
+
+# --- Domain / remote access ---
+domain: "example.com"                # TODO: set your Cloudflare-managed domain
+subdomains:
+  plex: "plex.{{ domain }}"
+  nextcloud: "cloud.{{ domain }}"
+  immich: "photos.{{ domain }}"
+  # Arr stack stays behind Tailscale, not exposed publicly
+
+# --- Tailscale (for private service access) ---
+tailscale_hostname: "homelab"
+
+# --- Service ports (host side) ---
+ports:
+  qbittorrent: 8080        # via gluetun
+  prowlarr: 9696
+  sonarr: 8989
+  radarr: 7878
+  bazarr: 6767
+  plex: 32400              # plus several UDP for discovery
+  immich: 2283
+  nextcloud: 8443          # Nextcloud AIO-style HTTPS port
+  open_webui: 3000         # already running
+
+# --- Image versions (pin for reproducibility; bump intentionally) ---
+versions:
+  gluetun: "v3.39.1"
+  qbittorrent: "5.0.2"
+  prowlarr: "1.25.0"
+  sonarr: "4.0.10"
+  radarr: "5.17.2"
+  bazarr: "1.4.3"
+  plex: "1.41.3"
+  immich: "v1.119.0"
+  nextcloud: "30.0.2-apache"
+  postgres: "16-alpine"
+  redis: "7-alpine"
+  cloudflared: "2025.4.0"
+  restic: "0.17.1"
+
+# --- VPN (Gluetun) ---
+# ProtonVPN Plus — port forwarding supported but dynamic (port rotates on
+# reconnect). The qBittorrent role pulls in gsp-qbittorent-gluetun-sync-port-mod
+# which polls Gluetun's control API every 120s and syncs the port into qBit.
+#
+# Swap provider by changing `provider`; Gluetun supports ~40 providers. For
+# static-port providers (airvpn, pia), remove VPN_PORT_FORWARDING vars in
+# roles/gluetun/tasks/main.yml and set a fixed `forwarded_port` here instead.
+vpn:
+  provider: "protonvpn"                     # protonvpn, airvpn, pia, mullvad, etc.
+  type: "wireguard"
+  # ProtonVPN only offers port forwarding on servers marked "P2P" — filter accordingly.
+  # Gluetun SERVER_COUNTRIES for Proton: use country names (e.g. "Netherlands", "Switzerland").
+  server_countries: "Netherlands,Switzerland"
+  # Credentials in vault.yml as vault_wireguard_*
+
+# --- Plex ---
+plex:
+  # Hardware transcoding: requires /dev/dri passthrough on Linux;
+  # on Docker Desktop WSL2 this works with Intel iGPU via --device
+  hw_transcode: true
+  # Claim token - only needed for first-time setup
+  # Get from: https://www.plex.tv/claim  (valid 4 minutes)
+  # Put in vault.yml as vault_plex_claim
+
+# --- Immich ---
+immich:
+  # ML features use CPU by default; add GPU later if desired
+  machine_learning: true
+
+# --- Nextcloud ---
+nextcloud:
+  admin_user: "admin"
+  # admin password in vault.yml as vault_nextcloud_admin_password
+  trusted_domains:
+    - "{{ subdomains.nextcloud }}"
+    - "localhost"
+
+# --- Backup (restic) ---
+backup:
+  sources:
+    - "{{ paths.photos_root }}"           # wedding photos + photos
+    - "{{ paths.docker_data }}/nextcloud" # nextcloud data
+    - "{{ paths.docker_data }}/immich"    # immich DB + config
+    - "{{ paths.docker_data }}/sonarr"    # arr configs
+    - "{{ paths.docker_data }}/radarr"
+    - "{{ paths.docker_data }}/prowlarr"
+    - "{{ paths.docker_data }}/bazarr"
+    - "{{ paths.docker_data }}/plex"
+  # Keep last 7 daily + 4 weekly + 6 monthly snapshots
+  retention:
+    daily: 7
+    weekly: 4
+    monthly: 6
+  cron: "0 3 * * *"          # 03:00 every day

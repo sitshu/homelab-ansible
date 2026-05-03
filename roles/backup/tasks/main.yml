@@ -1,0 +1,32 @@
+---
+- name: Install restic
+  ansible.builtin.apt:
+    name: restic
+    state: present
+    update_cache: true
+  become: true
+
+- name: Create restic script directory
+  ansible.builtin.file:
+    path: "{{ paths.docker_data }}/restic"
+    state: directory
+    mode: "0755"
+
+- name: Render restic backup script
+  ansible.builtin.template:
+    src: restic-backup.sh.j2
+    dest: "{{ paths.docker_data }}/restic/backup.sh"
+    mode: "0750"
+
+- name: Ensure backup repo directory exists
+  ansible.builtin.file:
+    path: "{{ paths.backup_root }}/restic-repo"
+    state: directory
+    mode: "0700"
+
+- name: Install cron job for nightly backup
+  ansible.builtin.cron:
+    name: "restic nightly backup"
+    job: "{{ paths.docker_data }}/restic/backup.sh >> {{ paths.docker_data }}/restic/backup.log 2>&1"
+    minute: "{{ backup.cron.split(' ')[0] }}"
+    hour: "{{ backup.cron.split(' ')[1] }}"
