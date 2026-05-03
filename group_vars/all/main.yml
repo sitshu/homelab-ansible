@@ -13,14 +13,10 @@ timezone: "America/Los_Angeles"      # TODO: set your timezone
 
 # --- Storage (WSL2 paths; host sees D:\data, WSL sees /mnt/d/data) ---
 paths:
-  # Configs, databases (on fast NVMe C:)
-  docker_data: "/mnt/c/docker-data"
-  # Media library (on 16TB D:)
+  docker_data: "/home/judgyfudge/docker-data"
   media_root: "/mnt/d/data/media"
   downloads_root: "/mnt/d/data/downloads"
-  # Photos (on fast NVMe C: for Immich performance)
-  photos_root: "/mnt/c/immich-library"
-  # Backup target (on 5TB E:)
+  photos_root: "/home/judgyfudge/immich-library"
   backup_root: "/mnt/e/backups"
 
 # --- Docker network (all containers share this) ---
@@ -51,13 +47,13 @@ ports:
 
 # --- Image versions (pin for reproducibility; bump intentionally) ---
 versions:
-  gluetun: "v3.39.1"
-  qbittorrent: "5.0.2"
-  prowlarr: "1.25.0"
-  sonarr: "4.0.10"
-  radarr: "5.17.2"
-  bazarr: "1.4.3"
-  plex: "1.41.3"
+  gluetun: "v3.41.1"
+  qbittorrent: "latest"
+  prowlarr: "latest"
+  sonarr: "latest"
+  radarr: "latest"
+  bazarr: "latest"
+  plex: "latest"
   immich: "v1.119.0"
   nextcloud: "30.0.2-apache"
   postgres: "16-alpine"

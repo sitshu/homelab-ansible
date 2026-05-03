@@ -22,7 +22,6 @@
   ansible.builtin.file:
     path: "{{ paths.backup_root }}/restic-repo"
     state: directory
-    mode: "0700"
 
 - name: Install cron job for nightly backup
   ansible.builtin.cron:

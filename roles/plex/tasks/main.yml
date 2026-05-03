@@ -1,23 +1,25 @@
 ---
-- name: Deploy Plex (with Intel iGPU hardware transcoding)
+- name: Deploy Plex (with NVIDIA NVENC hardware transcoding)
   community.docker.docker_container:
     name: plex
-    image: "lscr.io/linuxserver/plex:{{ versions.plex }}"
+    image: "plexinc/pms-docker:plexpass"
     state: started
     restart_policy: unless-stopped
-    # Plex needs host networking for GDM discovery (LAN clients find server)
     network_mode: host
-    # Intel iGPU passthrough for HW transcoding (Plex Pass)
-    devices:
-      - "/dev/dri:/dev/dri"
+    device_requests:
+      - driver: nvidia
+        count: -1
+        capabilities:
+          - ["gpu", "compute", "video", "utility"]
     env:
-      PUID: "{{ puid }}"
-      PGID: "{{ pgid }}"
+      PUID: "{{ puid | string }}"
+      PGID: "{{ pgid | string }}"
       TZ: "{{ timezone }}"
-      VERSION: "docker"
+      VERSION: docker
       PLEX_CLAIM: "{{ vault_plex_claim | default('') }}"
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: "compute,video,utility"
     volumes:
       - "{{ paths.docker_data }}/plex:/config"
-      - "{{ paths.media_root }}:/media:ro"    # Plex reads media, doesn't write
-      # Transcode on tmpfs in RAM for speed (i7-10700K has 16+GB)
-      # Using bind mount for simplicity; consider tmpfs for extra perf
+      - "{{ paths.media_root }}:/data/media:ro"
+      - "{{ paths.docker_data }}/plex/transcode:/transcode"

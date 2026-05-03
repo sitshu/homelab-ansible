@@ -8,8 +8,8 @@
     networks:
       - name: "{{ docker_network }}"
     env:
-      PUID: "{{ puid }}"
-      PGID: "{{ pgid }}"
+      PUID: "{{ puid | string}}"
+      PGID: "{{ pgid | string}}"
       TZ: "{{ timezone }}"
     ports:
       - "{{ ports.sonarr }}:8989"

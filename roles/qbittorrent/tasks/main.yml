@@ -18,10 +18,10 @@
     # ensuring Gluetun has a healthcheck that's healthy before qBit starts.
     network_mode: "container:gluetun"
     env:
-      PUID: "{{ puid }}"
-      PGID: "{{ pgid }}"
+      PUID: "{{ puid | string}}"
+      PGID: "{{ pgid | string }}"
       TZ: "{{ timezone }}"
-      WEBUI_PORT: "{{ ports.qbittorrent }}"
+      WEBUI_PORT: "{{ ports.qbittorrent | string}}"
 
       # --- GSP (Gluetun sync port) mod ---
       # DOCKER_MODS injects the sync script into the LSIO qBit image at boot.

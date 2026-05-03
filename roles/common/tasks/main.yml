@@ -1,11 +1,12 @@
 ---
-- name: Ensure base directories exist on host
+# NTFS paths (/mnt/c, /mnt/d, /mnt/e) don't support Linux chmod via WSL's 9P.
+# ext4 paths (under /home) do. Split tasks accordingly.
+
+- name: Ensure NTFS-mounted host dirs exist (no mode — 9P can't chmod)
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    mode: "0755"
   loop:
-    - "{{ paths.docker_data }}"
     - "{{ paths.media_root }}"
     - "{{ paths.media_root }}/movies"
     - "{{ paths.media_root }}/tv"
@@ -20,8 +21,16 @@
     - "{{ paths.downloads_root }}/complete/movies"
     - "{{ paths.downloads_root }}/complete/tv"
     - "{{ paths.downloads_root }}/complete/music"
-    - "{{ paths.photos_root }}"
     - "{{ paths.backup_root }}"
+
+- name: Ensure ext4-backed host dirs exist (with proper mode)
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ paths.docker_data }}"
+    - "{{ paths.photos_root }}"
 
 - name: Ensure per-service config directories exist
   ansible.builtin.file:
@@ -30,6 +39,7 @@
     mode: "0755"
   loop:
     - gluetun
+    - gluetun/auth
     - qbittorrent
     - prowlarr
     - sonarr
@@ -37,9 +47,7 @@
     - bazarr
     - plex
     - immich
-    - immich/db
     - nextcloud
-    - nextcloud/db
     - nextcloud/redis
     - cloudflared
     - restic
