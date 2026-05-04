@@ -1,0 +1,14 @@
+---
+- name: Deploy FlareSolverr (Cloudflare challenge solver for Prowlarr)
+  community.docker.docker_container:
+    name: flaresolverr
+    image: "ghcr.io/flaresolverr/flaresolverr:latest"
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ docker_network }}"
+    ports:
+      - "8191:8191"
+    env:
+      LOG_LEVEL: info
+      TZ: "{{ timezone }}"

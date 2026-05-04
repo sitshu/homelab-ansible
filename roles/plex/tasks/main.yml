@@ -5,6 +5,7 @@
     image: "plexinc/pms-docker:plexpass"
     state: started
     restart_policy: unless-stopped
+    hostname: "amit-desktop"
     network_mode: host
     device_requests:
       - driver: nvidia

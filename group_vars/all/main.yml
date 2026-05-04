@@ -10,7 +10,9 @@
 puid: 1000
 pgid: 1000
 timezone: "America/Los_Angeles"      # TODO: set your timezone
-
+# LAN subnet — allows Gluetun-namespaced containers (qBit, Prowlarr) to reach
+# LAN services (FlareSolverr on host, etc.) without leaking internet traffic.
+lan_subnet: "192.168.4.0/24"
 # --- Storage (WSL2 paths; host sees D:\data, WSL sees /mnt/d/data) ---
 paths:
   docker_data: "/home/judgyfudge/docker-data"
