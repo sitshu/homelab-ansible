@@ -44,7 +44,7 @@ ports:
   bazarr: 6767
   plex: 32400              # plus several UDP for discovery
   immich: 2283
-  nextcloud: 8443          # Nextcloud AIO-style HTTPS port
+  nextcloud: 8081          # Nextcloud AIO-style HTTPS port
   open_webui: 3000         # already running
 
 # --- Image versions (pin for reproducibility; bump intentionally) ---
