@@ -6,7 +6,23 @@
     state: started
     restart_policy: unless-stopped
     hostname: "amit-desktop"
-    network_mode: host
+    # Bridge mode with explicit port publishing. We previously used host mode
+    # for GDM LAN auto-discovery, but on Docker Desktop WSL2 host networking
+    # doesn't forward to Windows — localhost:32400 from the Windows browser
+    # never worked. Since remote access goes through Plex Relay (plex.tv) and
+    # LAN clients connect via plex.tv account discovery, GDM isn't required.
+    networks:
+      - name: "{{ docker_network }}"
+    published_ports:
+      - "32400:32400/tcp"      # main Plex web + API  (the important one)
+      - "3005:3005/tcp"        # Plex Companion
+      - "8324:8324/tcp"        # Roku Plex Companion
+      - "32469:32469/tcp"      # Plex DLNA Server
+      - "1900:1900/udp"        # Plex DLNA discovery
+      - "32410:32410/udp"      # GDM network discovery (best-effort; LAN only)
+      - "32412:32412/udp"
+      - "32413:32413/udp"
+      - "32414:32414/udp"
     device_requests:
       - driver: nvidia
         count: -1

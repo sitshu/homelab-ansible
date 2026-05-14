@@ -10,6 +10,7 @@ services:
     volumes:
       - "{{ paths.photos_root }}:/usr/src/app/upload"
       - /etc/localtime:/etc/localtime:ro
+      - "/home/judgyfudge/immich-library/Pictures:/mnt/external/pictures:ro"
     environment:
       DB_HOSTNAME: immich-postgres
       DB_USERNAME: postgres
